@@ -60,7 +60,7 @@ class Brain:
                 while self.current_sentence[0] == ' ':
                     self.current_sentence = self.current_sentence[1:]
 
-                self.current_sentence += '. '  # Todo 1. '\n' is temporary and should be wrapped in the GUI.
+                self.current_sentence += '. '
                 self.readable_paragraphs += self.current_sentence.capitalize()
                 self.current_sentence = ''
 
@@ -68,25 +68,25 @@ class Brain:
 
         return self.readable_paragraphs
 
-    def generator_normal_paragraph(self):
+    def generate_normal_paragraph(self):
         try:
-            file = open("Normal Paragraphs.csv", "r")
+            file = open("List of paragraphs/Normal Paragraphs.csv", "r")
             file.close()
             try:
-                with open("Normal Paragraphs.csv", "a") as file:
+                with open("List of paragraphs/Normal Paragraphs.csv", "a") as file:
                     self.paragraphs = [grab_paragraph_of_the_web(random.randint(1, 5))]
                     writer_object = writer(file)
                     writer_object.writerow(self.paragraphs)
                     file.close()
                 return self.paragraphs[0]
             except ConnectionError:
-                df = pd.read_csv('Normal Paragraphs.csv')
+                df = pd.read_csv('List of paragraphs/Normal Paragraphs.csv')
                 self.paragraphs = df['Paragraph'].to_list()
 
                 if len(self.paragraphs) >= 5:
                     return random.choice(self.paragraphs)
                 else:
-                    df = pd.read_csv('No Internet Paragraphs.csv')
+                    df = pd.read_csv('List of paragraphs/No Internet Paragraphs.csv')
                     self.paragraphs = df['Paragraph'].to_list()
                     return random.choice(self.paragraphs)
 
@@ -94,9 +94,9 @@ class Brain:
             try:
                 self.paragraphs = grab_paragraph_of_the_web(random.randint(1, 5))
                 df = pd.DataFrame({'Paragraph': [self.paragraphs]}, index=[0])
-                df.to_csv('Normal Paragraphs.csv', mode='a', index=False)
+                df.to_csv('List of paragraphs/Normal Paragraphs.csv', mode='a', index=False)
                 return self.paragraphs
             except ConnectionError:
-                df = pd.read_csv('No Internet Paragraphs.csv')
+                df = pd.read_csv('List of paragraphs/No Internet Paragraphs.csv')
                 self.paragraphs = df['Paragraph'].to_list()
                 return random.choice(self.paragraphs)
