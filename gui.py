@@ -1,9 +1,12 @@
 from sentence_generator import Brain
 from key_checker import Key_Brain
 from tkinter import *
-import keyboard
+import time
+
 
 MINUTE = 60
+FONT = 'Helvetica 15 bold'
+begone = False
 
 
 def transition(current_window):
@@ -26,6 +29,11 @@ def center_window(current_window):
 
 class GUI:
     def __init__(self):
+        self.clock = None
+        self.first_char = None
+        self.paragraphs_to_use = None
+        self.checker = None
+        self.input_ = None
         self.input_box = None
         self.first_character = ''
         self.current_text = ''
@@ -76,47 +84,82 @@ class GUI:
         mode_5min_but.pack()
 
     def start_typing(self, normal: bool, timed: bool, how_many: int):
-        input_ = StringVar()
+        self.checker = Key_Brain()
+        self.input_ = StringVar()
         generator = Brain()
-        checker = Key_Brain()
         transition(self.window)
         self.window.geometry('1080x720')
-        self.canvas = Canvas(self.window, width=500, height=300, bg="yellow", relief=SUNKEN)
-        self.canvas.pack(pady=(50, 25))
-        self.input_box = Entry(self.window, textvariable=input_)
-        self.input_box.pack()
         self.countdown = 1
         self.pages = 1
+
+        if normal:
+            self.paragraphs_to_use = generator.generate_normal_paragraph()
+            self.update_paragraph(how_many, timed)
+        else:
+            self.paragraphs_to_use = generator.generate_random_paragraph()
+            self.update_paragraph(how_many, timed)
+
+    def update_paragraph(self, how_many, timed):
+        self.canvas = Canvas(self.window, width=500, height=300, bg="yellow", relief=SUNKEN)
+        self.input_box = Entry(self.window, textvariable=self.input_)
+        self.clock = Label(self.window, text='00', font=FONT)
+        self.first_char = self.paragraphs_to_use[0]
         wrap_width = 380
         txt_start_x = 10
         txt_start_y = 10
-        # Test   ------------
-        text = ''
-        if normal:
-            text = 'normal'
-        else:
-            text = 'random'
-        # Test End ------------
-        if normal:
-            paragraphs_to_use = generator.generate_normal_paragraph()
-            first_character = paragraphs_to_use[0]
 
-            if timed:
-                self.countdown = how_many * MINUTE
-                self.current_text = self.canvas.create_text(txt_start_x, txt_start_y, text=paragraphs_to_use, fill="black", font='Helvetica 15 bold', width=wrap_width, anchor=NW)
-                self.first_character = self.canvas.create_text(txt_start_x, txt_start_y, text=first_character, fill="blue", font='Helvetica 15 bold underline', width=wrap_width, anchor=NW)
-                print(f"{self.countdown} secs on the clock for {text} paragraph This paragraph is timed.")
-            else:
-                self.pages = self.pages * how_many
-                self.canvas.create_text(0, 50, text=paragraphs_to_use, fill="black", font='Helvetica 15 bold underline', width=wrap_width, anchor=NW)
-                print(f"{self.pages} pages to type for {text} paragraph. This paragraph is untimed.")
+        # Create a 'Label' over the canvas that displays time left for timed test
+        # start the countdown for timed events using the 'after' function for timed events
+        # generate the necessary number of pages for the untimed
+        # stops both if index out of range and declare score or when the timer reaches 0
+        if timed:
+            self.countdown = how_many * MINUTE
+            self.clock.config(text=str(time.strftime("%M:%S", time.gmtime(float(self.countdown)))))
+            self.clock.pack(pady=(50, 25))
+            self.canvas.pack(pady=(0, 25))
+            self.input_box.pack()
+            self.current_text = self.canvas.create_text(txt_start_x, txt_start_y, text=self.paragraphs_to_use,
+                                                        fill="black", font=FONT, width=wrap_width,
+                                                        anchor=NW)
+            self.first_character = self.canvas.create_text(txt_start_x, txt_start_y, text=self.first_char, fill="blue",
+                                                           font=f'{FONT} underline', width=wrap_width,
+                                                           anchor=NW)
+            self.input_.trace('w', self.check_pressed)
         else:
-            paragraphs_to_use = generator.generate_random_paragraph()
-            if timed:
-                self.countdown = how_many * MINUTE
-                self.canvas.create_text(0, 50, text=paragraphs_to_use, fill="black", font='Helvetica 15 bold underline', width=wrap_width, anchor=NW)
-                print(f"{self.countdown} secs on the clock for {text} paragraph This paragraph is timed.")
-            else:
-                self.pages = self.pages * how_many
-                self.canvas.create_text(0, 50, text=paragraphs_to_use, fill="black", font='Helvetica 15 bold underline', width=wrap_width, anchor=NW)
-                print(f"{self.pages} pages to type for {text} paragraph. This paragraph is untimed.")
+            self.pages = self.pages * how_many
+            self.canvas.pack(pady=(50, 25))
+            self.input_box.pack()
+            self.current_text = self.canvas.create_text(txt_start_x, txt_start_y, text=self.paragraphs_to_use,
+                                                        fill="black", font=FONT, width=wrap_width,
+                                                        anchor=NW)
+            self.first_character = self.canvas.create_text(txt_start_x, txt_start_y, text=self.first_char, fill="blue",
+                                                           font=f'{FONT} underline', width=wrap_width,
+                                                           anchor=NW)
+            self.input_.trace('w', self.check_pressed)
+
+    def check_pressed(self, *args):
+        global begone
+        if not begone:
+            self.reduce_countdown()
+            begone = True
+
+        new_par = self.checker.check_key_pressed(paragraph=self.paragraphs_to_use, user_pressed=self.input_.get())
+        if self.first_char == new_par[0] and len(new_par) == len(self.paragraphs_to_use):
+            self.canvas.itemconfig(self.first_character, fill='red')
+            self.input_box.delete(0, END)
+        else:
+            self.first_char = new_par[0]
+            self.paragraphs_to_use = new_par
+            self.canvas.itemconfig(self.first_character, fill='blue')
+            self.canvas.itemconfig(self.first_character, text=self.first_char)
+            self.canvas.itemconfig(self.current_text, text=self.paragraphs_to_use)
+            self.input_box.delete(0, END)
+
+    def reduce_countdown(self):
+        if self.countdown > 0:
+            self.countdown -= 1
+            self.clock.config(text=str(time.strftime("%M:%S", time.gmtime(float(self.countdown)))))
+            self.window.after(1000, self.reduce_countdown)
+        else:
+            # end test
+            pass

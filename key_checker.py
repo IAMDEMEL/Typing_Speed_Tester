@@ -1,6 +1,3 @@
-import keyboard
-
-
 class Key_Brain:
     def __init__(self):
         self.can_add_to_correct_key_press = True
@@ -10,19 +7,18 @@ class Key_Brain:
         self.got_right = 0
         self.got_wrong = 0
 
-    def check_key_pressed(self, paragraph):
+    def check_key_pressed(self, paragraph, user_pressed):
         self.paragraph = paragraph
-        if keyboard.is_pressed(self.paragraph[0]):
-            print(self.paragraph)
+        if user_pressed == self.paragraph[0]:
             if self.can_add_to_correct_key_press:
                 self.correct_key_pressed += 1
+                print(self.paragraph[1:])
                 return self.paragraph[1:]
             else:
                 self.can_add_to_correct_key_press = True
+                print(self.paragraph[1:])
                 return self.paragraph[1:]
-            # update gui
         else:
-            print(self.paragraph)
             self.can_add_to_correct_key_press = False
             self.incorrect_key_pressed += 1
             return self.paragraph
