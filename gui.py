@@ -3,7 +3,6 @@ from key_checker import Key_Brain
 from tkinter import *
 import time
 
-
 MINUTE = 60
 FONT = 'Helvetica 15 bold'
 begone = False
@@ -29,9 +28,13 @@ def center_window(current_window):
 
 class GUI:
     def __init__(self):
+        self.timed = None
+        self.user_chose = None
+        self.got_right = None
+        self.got_wrong = None
         self.clock = None
-        self.first_char = None
-        self.paragraphs_to_use = None
+        self.first_char = ''
+        self.paragraphs_to_use = ''
         self.checker = None
         self.input_ = None
         self.input_box = None
@@ -65,6 +68,7 @@ class GUI:
 
     def amount_to_do(self, normal: bool, timed: bool):
         transition(self.window)
+        self.timed = timed
         if timed:
             mode_1min_but = Button(self.window, text='1 Minute',
                                    command=lambda: self.start_typing(normal=normal, timed=timed, how_many=1))
@@ -84,6 +88,8 @@ class GUI:
         mode_5min_but.pack()
 
     def start_typing(self, normal: bool, timed: bool, how_many: int):
+        self.user_chose = (normal, timed, how_many)
+        self.paragraphs_to_use = ''
         self.checker = Key_Brain()
         self.input_ = StringVar()
         generator = Brain()
@@ -92,11 +98,19 @@ class GUI:
         self.countdown = 1
         self.pages = 1
 
-        if normal:
+        if normal and timed:
             self.paragraphs_to_use = generator.generate_normal_paragraph()
             self.update_paragraph(how_many, timed)
-        else:
+        elif not normal and timed:
             self.paragraphs_to_use = generator.generate_random_paragraph()
+            self.update_paragraph(how_many, timed)
+        elif normal and not timed:
+            for i in range(how_many):
+                self.paragraphs_to_use += generator.generate_normal_paragraph()
+            self.update_paragraph(how_many, timed)
+        elif not normal and not timed:
+            for i in range(how_many):
+                self.paragraphs_to_use = {generator.generate_random_paragraph()}
             self.update_paragraph(how_many, timed)
 
     def update_paragraph(self, how_many, timed):
@@ -107,11 +121,6 @@ class GUI:
         wrap_width = 380
         txt_start_x = 10
         txt_start_y = 10
-
-        # Create a 'Label' over the canvas that displays time left for timed test
-        # start the countdown for timed events using the 'after' function for timed events
-        # generate the necessary number of pages for the untimed
-        # stops both if index out of range and declare score or when the timer reaches 0
         if timed:
             self.countdown = how_many * MINUTE
             self.clock.config(text=str(time.strftime("%M:%S", time.gmtime(float(self.countdown)))))
@@ -140,26 +149,46 @@ class GUI:
     def check_pressed(self, *args):
         global begone
         if not begone:
-            self.reduce_countdown()
             begone = True
+            self.reduce_countdown()
 
         new_par = self.checker.check_key_pressed(paragraph=self.paragraphs_to_use, user_pressed=self.input_.get())
-        if self.first_char == new_par[0] and len(new_par) == len(self.paragraphs_to_use):
-            self.canvas.itemconfig(self.first_character, fill='red')
-            self.input_box.delete(0, END)
+        if len(new_par) >= 1:
+            if self.first_char == new_par[0] and len(new_par) == len(self.paragraphs_to_use):
+                self.canvas.itemconfig(self.first_character, fill='red')
+                self.input_box.delete(0, END)
+            else:
+                self.first_char = new_par[0]
+                self.paragraphs_to_use = new_par
+                self.canvas.itemconfig(self.first_character, fill='blue')
+                self.canvas.itemconfig(self.first_character, text=self.first_char)
+                self.canvas.itemconfig(self.current_text, text=self.paragraphs_to_use)
+                self.input_box.delete(0, END)
         else:
-            self.first_char = new_par[0]
-            self.paragraphs_to_use = new_par
-            self.canvas.itemconfig(self.first_character, fill='blue')
-            self.canvas.itemconfig(self.first_character, text=self.first_char)
-            self.canvas.itemconfig(self.current_text, text=self.paragraphs_to_use)
-            self.input_box.delete(0, END)
+            self.end_session()
+
+    def end_session(self):
+        global begone
+        begone = False
+        transition(self.window)
+        self.window.geometry('400x250')
+        self.got_right, self.got_wrong = self.checker.percentage_right_to_wrong()
+        right_accuracy = Label(self.window, text=f'{self.got_right}%')
+        wrong_accuracy = Label(self.window, text=f'{self.got_wrong}%')
+        try_again_but = Button(self.window, text='Try Again', command=lambda: self.start_typing(
+            self.user_chose[0], self.user_chose[1], self.user_chose[2]))
+        menu_but = Button(self.window, text='Menu', command=self.mode_selection)
+        right_accuracy.pack()
+        wrong_accuracy.pack()
+        try_again_but.pack()
+        menu_but.pack()
 
     def reduce_countdown(self):
         if self.countdown > 0:
-            self.countdown -= 1
-            self.clock.config(text=str(time.strftime("%M:%S", time.gmtime(float(self.countdown)))))
-            self.window.after(1000, self.reduce_countdown)
+            if begone:
+                self.countdown -= 1
+                self.clock.config(text=str(time.strftime("%M:%S", time.gmtime(float(self.countdown)))))
+                self.window.after(1000, self.reduce_countdown)
         else:
-            # end test
-            pass
+            if self.timed:
+                self.end_session()
