@@ -43,7 +43,7 @@ class Brain:
                     self.countdown = random.randint(3, self.words_in_sentence - 3)
 
                 for word in range(self.words_in_sentence):
-                    self.characters_in_word = random.randint(1, 12)
+                    self.characters_in_word = random.randint(1, 9)
 
                     if self.words_in_sentence >= short_sentence_length:
                         if self.countdown > 0:

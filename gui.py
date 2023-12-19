@@ -1,5 +1,6 @@
 from sentence_generator import Brain
 from key_checker import Key_Brain
+from customtkinter import *
 from tkinter import *
 import time
 
@@ -43,25 +44,26 @@ class GUI:
         self.canvas = None
         self.pages = 1
         self.countdown = 0
-        self.window = Tk()
-        # print('hello world I am GUI Brain')
+        self.window = CTk()
+        self.window.title('Typing Speed Tester')
+        self.window.bind('<Return>', self.start_new_paragraph)
         center_window(current_window=self.window)
-        Label(self.window, text='Typing Speed Tester').pack(pady=(50, 25))
-        Button(self.window, text='Start', command=self.mode_selection).pack()
+        CTkLabel(self.window, text='Typing Speed Tester').pack(pady=(50, 25))
+        CTkButton(self.window, text='Start', command=self.mode_selection).pack()
         self.window.mainloop()
 
     def mode_selection(self):
         transition(self.window)
-        norm_mode_but = Button(self.window, text='Normal Mode', command=lambda: self.timed_or_untimed(normal=True))
-        rand_mode_but = Button(self.window, text='Random Mode', command=lambda: self.timed_or_untimed(normal=False))
+        norm_mode_but = CTkButton(self.window, text='Normal Mode', command=lambda: self.timed_or_untimed(normal=True))
+        rand_mode_but = CTkButton(self.window, text='Random Mode', command=lambda: self.timed_or_untimed(normal=False))
         norm_mode_but.pack(pady=(50, 25))
         rand_mode_but.pack()
 
     def timed_or_untimed(self, normal: bool):
         transition(self.window)
-        timed_mode_but = Button(self.window, text='Timed',
+        timed_mode_but = CTkButton(self.window, text='Timed',
                                 command=lambda: self.amount_to_do(normal=normal, timed=True))
-        untimed_mode_but = Button(self.window, text='Untimed',
+        untimed_mode_but = CTkButton(self.window, text='Untimed',
                                   command=lambda: self.amount_to_do(normal=normal, timed=False))
         timed_mode_but.pack(pady=(50, 25))
         untimed_mode_but.pack()
@@ -70,18 +72,18 @@ class GUI:
         transition(self.window)
         self.timed = timed
         if timed:
-            mode_1min_but = Button(self.window, text='1 Minute',
+            mode_1min_but = CTkButton(self.window, text='1 Minute',
                                    command=lambda: self.start_typing(normal=normal, timed=timed, how_many=1))
-            mode_3min_but = Button(self.window, text='3 Minutes',
+            mode_3min_but = CTkButton(self.window, text='3 Minutes',
                                    command=lambda: self.start_typing(normal=normal, timed=timed, how_many=3))
-            mode_5min_but = Button(self.window, text='5 Minutes',
+            mode_5min_but = CTkButton(self.window, text='5 Minutes',
                                    command=lambda: self.start_typing(normal=normal, timed=timed, how_many=5))
         else:
-            mode_1min_but = Button(self.window, text='1 Page',
+            mode_1min_but = CTkButton(self.window, text='1 Page',
                                    command=lambda: self.start_typing(normal=normal, timed=timed, how_many=1))
-            mode_3min_but = Button(self.window, text='3 Pages',
+            mode_3min_but = CTkButton(self.window, text='3 Pages',
                                    command=lambda: self.start_typing(normal=normal, timed=timed, how_many=3))
-            mode_5min_but = Button(self.window, text='5 Pages',
+            mode_5min_but = CTkButton(self.window, text='5 Pages',
                                    command=lambda: self.start_typing(normal=normal, timed=timed, how_many=5))
         mode_1min_but.pack(pady=(50, 25))
         mode_3min_but.pack(pady=(0, 25))
@@ -110,20 +112,21 @@ class GUI:
             self.update_paragraph(how_many, timed)
         elif not normal and not timed:
             for i in range(how_many):
-                self.paragraphs_to_use = {generator.generate_random_paragraph()}
+                self.paragraphs_to_use = generator.generate_random_paragraph()
             self.update_paragraph(how_many, timed)
 
     def update_paragraph(self, how_many, timed):
-        self.canvas = Canvas(self.window, width=500, height=300, bg="yellow", relief=SUNKEN)
-        self.input_box = Entry(self.window, textvariable=self.input_)
-        self.clock = Label(self.window, text='00', font=FONT)
+        self.canvas = CTkCanvas(self.window, width=500, height=300, bg="yellow", relief=SUNKEN)
+        self.input_box = CTkEntry(self.window, textvariable=self.input_)
+        self.clock = CTkLabel(self.window, text='00', font=('Helvetica', 15))
+        print(self.paragraphs_to_use)
         self.first_char = self.paragraphs_to_use[0]
         wrap_width = 380
         txt_start_x = 10
         txt_start_y = 10
         if timed:
             self.countdown = how_many * MINUTE
-            self.clock.config(text=str(time.strftime("%M:%S", time.gmtime(float(self.countdown)))))
+            self.clock.configure(text=str(time.strftime("%M:%S", time.gmtime(float(self.countdown)))))
             self.clock.pack(pady=(50, 25))
             self.canvas.pack(pady=(0, 25))
             self.input_box.pack()
@@ -173,11 +176,11 @@ class GUI:
         transition(self.window)
         self.window.geometry('400x250')
         self.got_right, self.got_wrong = self.checker.percentage_right_to_wrong()
-        right_accuracy = Label(self.window, text=f'{self.got_right}%')
-        wrong_accuracy = Label(self.window, text=f'{self.got_wrong}%')
-        try_again_but = Button(self.window, text='Try Again', command=lambda: self.start_typing(
+        right_accuracy = CTkLabel(self.window, text=f'{self.got_right}%')
+        wrong_accuracy = CTkLabel(self.window, text=f'{self.got_wrong}%')
+        try_again_but = CTkButton(self.window, text='Try Again', command=lambda: self.start_typing(
             self.user_chose[0], self.user_chose[1], self.user_chose[2]))
-        menu_but = Button(self.window, text='Menu', command=self.mode_selection)
+        menu_but = CTkButton(self.window, text='Menu', command=self.mode_selection)
         right_accuracy.pack()
         wrong_accuracy.pack()
         try_again_but.pack()
@@ -187,8 +190,18 @@ class GUI:
         if self.countdown > 0:
             if begone:
                 self.countdown -= 1
-                self.clock.config(text=str(time.strftime("%M:%S", time.gmtime(float(self.countdown)))))
-                self.window.after(1000, self.reduce_countdown)
+                self.clock.configure(text=str(time.strftime("%M:%S", time.gmtime(float(self.countdown)))))
         else:
             if self.timed:
                 self.end_session()
+        self.window.after(1000, self.reduce_countdown)
+
+    def start_new_paragraph(self, event):
+        if self.paragraphs_to_use[0] == '\n':
+            self.paragraphs_to_use = self.paragraphs_to_use[2:]
+            self.first_char = self.paragraphs_to_use[0]
+            self.canvas.itemconfig(self.first_character, fill='blue')
+            self.canvas.itemconfig(self.first_character, text=self.first_char)
+            self.canvas.itemconfig(self.current_text, text=self.paragraphs_to_use)
+
+
